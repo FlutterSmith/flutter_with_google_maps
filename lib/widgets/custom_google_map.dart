@@ -12,6 +12,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
   late CameraPosition initialCameraPosition;
   late GoogleMapController googleMapController;
   String? nightMapStyle;
+  Set<Marker> markers = {};
 
   @override
   void initState() {
@@ -19,6 +20,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
       target: LatLng(31.513631468276124, 31.84429113585985),
       zoom: 10,
     );
+    initMarkers();
     super.initState();
   }
 
@@ -35,11 +37,32 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     setState(() {});
   }
 
+  void initMarkers() {
+    var myMarker = Marker(
+      markerId: const MarkerId('1'),
+      position: const LatLng(31.513631468276124, 31.84429113585985),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      infoWindow: const InfoWindow(title: 'My Location'),
+    );
+    markers.add(myMarker);
+    markers.add(
+      Marker(
+        markerId: const MarkerId('2'),
+        position: const LatLng(30.820345298178513, 31.00868648882693),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        infoWindow: const InfoWindow(title: 'My Location'),
+      ),
+    );
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         GoogleMap(
+          markers: markers,
           style: nightMapStyle,
           myLocationEnabled: true,
           onMapCreated: (controller) {
