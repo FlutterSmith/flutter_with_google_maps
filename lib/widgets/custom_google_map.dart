@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_with_google_maps/models/place_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:ui' as ui;
 
 class CustomGoogleMap extends StatefulWidget {
   const CustomGoogleMap({super.key});
@@ -13,6 +16,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
   late GoogleMapController googleMapController;
   String? nightMapStyle;
   Set<Marker> markers = {};
+  Set<Polyline> polyLines = {};
 
   @override
   void initState() {
@@ -21,6 +25,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
       zoom: 10,
     );
     initMarkers();
+    initPolyLines();
     super.initState();
   }
 
@@ -37,22 +42,51 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     setState(() {});
   }
 
-  void initMarkers() {
-    var myMarker = Marker(
-      markerId: const MarkerId('1'),
-      position: const LatLng(31.513631468276124, 31.84429113585985),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-      infoWindow: const InfoWindow(title: 'My Location'),
+  void initPolyLines() {
+    Polyline polyline = const Polyline(
+      polylineId: PolylineId('1'),
+      color: Colors.blue,
+      width: 5,
+      startCap: Cap.roundCap,
+      endCap: Cap.roundCap,
+       
+      points: [
+        LatLng(31.513631468276124, 31.84429113585985),
+        LatLng(31.50534244845643, 32.71444082458226),
+      ],
     );
-    markers.add(myMarker);
-    markers.add(
-      Marker(
-        markerId: const MarkerId('2'),
-        position: const LatLng(30.820345298178513, 31.00868648882693),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: const InfoWindow(title: 'My Location'),
-      ),
-    );
+    polyLines.add(polyline);
+  }
+
+  // Future<Uint8List> getImageFromRawData(String image, double width) async {
+  //   var imageData = await rootBundle.load(image);
+
+  //   var imageCodec = await ui.instantiateImageCodec(
+  //       imageData.buffer.asUint8List(),
+  //       targetWidth: width.round());
+  //   var imageFrameInfo = await imageCodec.getNextFrame();
+
+  //   var imageByteData =
+  //       await imageFrameInfo.image.toByteData(format: ui.ImageByteFormat.png);
+
+  //   return imageByteData!.buffer.asUint8List();
+  // }
+
+  void initMarkers() async {
+    // var custommarkerIcon = BitmapDescriptor.bytes(
+    //   await getImageFromRawData('assets/images/icon.jpg', 50),
+    // );
+    var myMarkers = places
+        .map(
+          (e) => Marker(
+            // icon: custommarkerIcon,
+            markerId: MarkerId(e.id.toString()),
+            position: e.latLng,
+            infoWindow: InfoWindow(title: e.name),
+          ),
+        )
+        .toSet();
+    markers.addAll(myMarkers);
 
     setState(() {});
   }
@@ -62,6 +96,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     return Stack(
       children: [
         GoogleMap(
+          polylines: polyLines,
           markers: markers,
           style: nightMapStyle,
           myLocationEnabled: true,
