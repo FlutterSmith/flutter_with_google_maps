@@ -31,7 +31,9 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     // initPolyLines();
 
     location = Location();
-    checkAndRequestLocationService();
+
+    setMyLocation();
+
     super.initState();
   }
 
@@ -48,7 +50,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     setState(() {});
   }
 
-  void checkAndRequestLocationService() async {
+  Future<void> checkAndRequestLocationService() async {
     var isServiceEnabled = await location.serviceEnabled();
 
     if (!isServiceEnabled) {
@@ -57,22 +59,38 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
         // TODO: show error
       }
     }
-
-    checkAndRequestLocationPermission();
   }
 
-  void checkAndRequestLocationPermission() async {
+  Future<bool> checkAndRequestLocationPermission() async {
     var isPermissionGranted = await location.hasPermission();
+
+    if (isPermissionGranted == PermissionStatus.deniedForever) {
+      return false;
+    }
 
     if (isPermissionGranted == PermissionStatus.denied) {
       isPermissionGranted = await location.requestPermission();
 
       if (isPermissionGranted != PermissionStatus.granted) {
-        // TODO: show error
+        return false;
       }
     }
+    return true;
   }
 
+  void getLocationData() {
+    location.onLocationChanged.listen((locationData) {});
+  }
+
+  void setMyLocation() async {
+    await checkAndRequestLocationService();
+    var hasPermission = await checkAndRequestLocationPermission();
+    if (hasPermission) {
+      getLocationData();
+    } else {
+      // TODO: show error
+    }
+  }
   // void initPolyLines() {
   //   Polyline polyline = const Polyline(
   //     polylineId: PolylineId('1'),
@@ -132,8 +150,6 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
           onMapCreated: (controller) {
             googleMapController = controller;
             initMapStyle();
-
-            location.onLocationChanged.listen((locationData) {});
           },
           initialCameraPosition: initialCameraPosition,
           // cameraTargetBounds: CameraTargetBounds(
