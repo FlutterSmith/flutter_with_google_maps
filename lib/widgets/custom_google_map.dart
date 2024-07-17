@@ -4,6 +4,8 @@ import 'package:flutter_with_google_maps/models/place_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:ui' as ui;
 
+import 'package:location/location.dart';
+
 class CustomGoogleMap extends StatefulWidget {
   const CustomGoogleMap({super.key});
 
@@ -15,8 +17,9 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
   late CameraPosition initialCameraPosition;
   late GoogleMapController googleMapController;
   String? nightMapStyle;
-  Set<Marker> markers = {};
-  Set<Polyline> polyLines = {};
+  late Location location;
+  // Set<Marker> markers = {};
+  // Set<Polyline> polyLines = {};
 
   @override
   void initState() {
@@ -24,8 +27,11 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
       target: LatLng(31.513631468276124, 31.84429113585985),
       zoom: 10,
     );
-    initMarkers();
-    initPolyLines();
+    // initMarkers();
+    // initPolyLines();
+
+    location = Location();
+    checkAndRequestLocationService();
     super.initState();
   }
 
@@ -42,21 +48,46 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     setState(() {});
   }
 
-  void initPolyLines() {
-    Polyline polyline = const Polyline(
-      polylineId: PolylineId('1'),
-      color: Colors.blue,
-      width: 5,
-      startCap: Cap.roundCap,
-      endCap: Cap.roundCap,
-       
-      points: [
-        LatLng(31.513631468276124, 31.84429113585985),
-        LatLng(31.50534244845643, 32.71444082458226),
-      ],
-    );
-    polyLines.add(polyline);
+  void checkAndRequestLocationService() async {
+    var isServiceEnabled = await location.serviceEnabled();
+
+    if (!isServiceEnabled) {
+      isServiceEnabled = await location.requestService();
+      if (!isServiceEnabled) {
+        // TODO: show error
+      }
+    }
+
+    checkAndRequestLocationPermission();
   }
+
+  void checkAndRequestLocationPermission() async {
+    var isPermissionGranted = await location.hasPermission();
+
+    if (isPermissionGranted == PermissionStatus.denied) {
+      isPermissionGranted = await location.requestPermission();
+
+      if (isPermissionGranted != PermissionStatus.granted) {
+        // TODO: show error
+      }
+    }
+  }
+
+  // void initPolyLines() {
+  //   Polyline polyline = const Polyline(
+  //     polylineId: PolylineId('1'),
+  //     color: Colors.blue,
+  //     width: 5,
+  //     startCap: Cap.roundCap,
+  //     endCap: Cap.roundCap,
+
+  //     points: [
+  //       LatLng(31.513631468276124, 31.84429113585985),
+  //       LatLng(31.50534244845643, 32.71444082458226),
+  //     ],
+  //   );
+  //   polyLines.add(polyline);
+  // }
 
   // Future<Uint8List> getImageFromRawData(String image, double width) async {
   //   var imageData = await rootBundle.load(image);
@@ -72,37 +103,37 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
   //   return imageByteData!.buffer.asUint8List();
   // }
 
-  void initMarkers() async {
-    // var custommarkerIcon = BitmapDescriptor.bytes(
-    //   await getImageFromRawData('assets/images/icon.jpg', 50),
-    // );
-    var myMarkers = places
-        .map(
-          (e) => Marker(
-            // icon: custommarkerIcon,
-            markerId: MarkerId(e.id.toString()),
-            position: e.latLng,
-            infoWindow: InfoWindow(title: e.name),
-          ),
-        )
-        .toSet();
-    markers.addAll(myMarkers);
+  // void initMarkers() async {
+  // var custommarkerIcon = BitmapDescriptor.bytes(
+  //   await getImageFromRawData('assets/images/icon.jpg', 50),
+  // );
+  //   var myMarkers = places
+  //       .map(
+  //         (e) => Marker(
+  // icon: custommarkerIcon,
+  //           markerId: MarkerId(e.id.toString()),
+  //           position: e.latLng,
+  //           infoWindow: InfoWindow(title: e.name),
+  //         ),
+  //       )
+  //       .toSet();
+  //   markers.addAll(myMarkers);
 
-    setState(() {});
-  }
+  //   setState(() {});
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         GoogleMap(
-          polylines: polyLines,
-          markers: markers,
           style: nightMapStyle,
           myLocationEnabled: true,
           onMapCreated: (controller) {
             googleMapController = controller;
             initMapStyle();
+
+            location.onLocationChanged.listen((locationData) {});
           },
           initialCameraPosition: initialCameraPosition,
           // cameraTargetBounds: CameraTargetBounds(
@@ -139,3 +170,12 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
 // street view 13 -> 17
 // building view 18 -> 20
 
+
+
+// steps to get location 
+// inquire about location service - on/off 
+// request location permission
+// get current location or  
+// get last known location
+// get stream of location changes 
+// display location on map
